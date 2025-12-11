@@ -138,6 +138,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+st.markdown("""
+<style>
+/* Expande la tabla editable al 100% del ancho */
+[data-testid="stDataEditor"] {
+    width: 100% !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ============================================================
 # TABS
@@ -388,6 +396,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
