@@ -1,6 +1,7 @@
 import streamlit as st
 import smartsheet
 from datetime import datetime, timedelta
+import pandas as pd
 
 def df_to_csv_bytes(df):  
     return df.to_csv(index=False, encoding="utf-8-sig").encode()
@@ -387,6 +388,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
