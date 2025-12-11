@@ -3,7 +3,7 @@ import smartsheet
 from datetime import datetime, timedelta
 import pandas as pd
 
-st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
+st.set_page_config(page_title="Registro de Producto Terminado")
 
 ALMACEN_PASSWORD = st.secrets["ALMACEN_PASSWORD"]
 
@@ -273,6 +273,25 @@ with tab1:
 
 with tab2:
 
+    # Expansión de tabla SOLO en el Tab 2
+    st.markdown("""
+    <style>
+    /* Solo afecta a los elementos dentro del Tab 2 usando un scope */
+    div[data-testid="stTabContent"] div[data-testid="stDataEditor"] > div {
+        width: 100% !important;
+    }
+
+    div[data-testid="stTabContent"] div[data-testid="stDataEditor-Viewport"] {
+        width: 100% !important;
+        overflow-x: auto !important;
+    }
+
+    div[data-testid="stTabContent"] div[data-testid="stVerticalBlock"] {
+        width: 100% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("## 📦 Panel de Almacén – Producto Terminado")
 
     # ---------------------------------------
@@ -405,6 +424,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
