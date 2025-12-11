@@ -1,8 +1,8 @@
 import streamlit as st
 import smartsheet
 
-TOKEN = "RPRG2Wx6jeoVISCWo03UWnDBWbSSixedmbc5d"
-SHEET_ID = "3463316224561028" # Tu Sheet ID numérico correcto
+TOKEN = RPRG2Wx6jeoVISCWo03UWnDBWbSSixedmbc5d
+SHEET_ID = 3463316224561028 # Tu Sheet ID numérico correcto
 
 client = smartsheet.Smartsheet(TOKEN)
 
@@ -18,4 +18,5 @@ try:
 except Exception as e:
     st.error("Error al obtener columnas:")
     st.write(e)
+
 
