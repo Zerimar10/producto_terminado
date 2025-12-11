@@ -261,396 +261,135 @@ if st.button("Guardar Registro"):
 
 with tab2:
 
-    st.markdown("<div class='titulo-seccion'>Panel de Almacén</div>", unsafe_allow_html=True)
+    st.markdown("## 📦 Panel de Almacén – Producto Terminado")
 
     # ---------------------------------------
-    # 1) Inicializar el estado de autenticación
+    # AUTENTICACIÓN
     # ---------------------------------------
-    
-    if "almacen_autenticando" not in st.session_state:
-        st.session_state.almacen_autenticando = False
+    if "auth_pt" not in st.session_state:
+        st.session_state.auth_pt = False
 
-    # ---------------------------------------
-    # 2) Si NO está autenticado → pedir contraseña
-    # ---------------------------------------
-    if not st.session_state.almacen_autenticando:
-
-        pwd = st.text_input("Ingrese contraseña:", type="password", key="pwd_input")
-
-        if pwd:
-            if pwd == ALMACEN_PASSWORD:
-                st.session_state.almacen_autenticando = True
-                st.rerun()
-                
-            else:
-                st.warning("🚫 Acceso restringido.")
-                st.stop()
-
+    if not st.session_state.auth_pt:
+        pwd = st.text_input("Ingrese contraseña del almacén:", type="password")
+        if pwd == st.secrets["ALMACEN_PASSWORD"]:
+            st.session_state.auth_pt = True
+            st.rerun()
+        elif pwd:
+            st.error("❌ Contraseña incorrecta")
         st.stop()
 
+    st.success("🔓 Acceso concedido")
+
     # ---------------------------------------
-    # 3) SI YA ESTÁ AUTENTICADO → mostrar panel
+    # CARGAR DATOS DE SMARTSHEET
     # ---------------------------------------
-    st.success("🔓 Acceso concedido.")
+    client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
+    sheet = client.Sheets.get_sheet(SHEET_ID)
 
-    # Ocultar el input una vez autenticado (lo elimina del DOM)
-    st.markdown("""
-    <style>
-    input[type="password"] {display:none;}
-    label[for="pwd_input"] {display:none;}
-    </style>
-    """, unsafe_allow_html=True)
+    rows = []
+    for row in sheet.rows:
+        data = {"row_id": row.id}
+        for cell in row.cells:
+            cid = cell.column_id
+            val = cell.value
 
-    # Ahora carga el panel normalmente
-    df = cargar_desde_smartsheet().fillna("")
+            for k, v in COL_ID.items():
+                if cid == v:
+                    data[k] = val
+        rows.append(data)
 
-    if "min_final" not in df.columns: df["min_final"] = None
+    df = pd.DataFrame(rows).fillna("")
 
-    # ============================================================
-    # CALCULAR MINUTOS + CONGELAMIENTO
-    # ============================================================
+    # Asegurar tipos booleanos correctos
+    for col in ["recolectado", "empaque", "checklist", "cierre"]:
+        df[col] = df[col].apply(lambda x: True if x is True else False)
 
-    # Normalizar columna min_final (None o número)
-    df["min_final"] = df["min_final"].apply(
-        lambda x: None if str(x).strip().lower() in ["", "none", "nan"] else int(float(x))
+    # ---------------------------------------
+    # COLUMNA VISUAL DE COLOR VERDE
+    # ---------------------------------------
+    def verde(x):
+        return "🟩" if x else "⬜"
+
+    df["R"] = df["recolectado"].apply(verde)
+    df["E"] = df["empaque"].apply(verde)
+    df["C"] = df["checklist"].apply(verde)
+    df["F"] = df["cierre"].apply(verde)
+
+    # ---------------------------------------
+    # TABLA EDITABLE
+    # ---------------------------------------
+    st.markdown("### ✏️ Editar registros")
+
+    df_editable = df[[
+        "cuarto", "numero_parte", "numero_orden", "cantidad", "fecha_hora",
+        "recolectado", "empaque", "checklist", "cierre", "notas",
+        "R", "E", "C", "F", "row_id"
+    ]]
+
+    edited = st.data_editor(
+        df_editable,
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "recolectado": st.column_config.CheckboxColumn("Recolectado"),
+            "empaque": st.column_config.CheckboxColumn("Empaque"),
+            "checklist": st.column_config.CheckboxColumn("Checklist"),
+            "cierre": st.column_config.CheckboxColumn("Cierre"),
+            "notas": st.column_config.TextColumn("Notas"),
+            "R": " ",
+            "E": " ",
+            "C": " ",
+            "F": " ",
+        }
     )
 
-    # Convertir fecha a datetime
-    df["fecha_hora_dt"] = pd.to_datetime(df["fecha_hora"], errors="coerce")
-
-    # Estados donde los minutos deben congelarse
-    estados_finales = ["Entregado", "Cancelado", "No encontrado"]
-
-    from datetime import datetime, timedelta
-
-    def calcular_minutos(row):
-        # Si la fecha no es válida → 0
-        if pd.isna(row["fecha_hora_dt"]):
-            return 0
-
-        # Si ya está congelado → regresar ese valor
-        if row["min_final"] is not None:
-            try:
-                return int(row["min_final"])
-            except:
-                pass
-
-        # Hora local correcta (UTC-7)
-        ahora = datetime.utcnow() - timedelta(hours=7)
-
-        # Si el status es final → congelar una sola vez
-        if row["status"] in estados_finales:
-            diff = (ahora - row["fecha_hora_dt"]).total_seconds() / 60
-            return int(diff)
-
-        # Caso normal (contador vivo)
-        diff = (ahora - row["fecha_hora_dt"]).total_seconds() / 60
-        return int(diff)
-
-    # Aplicar cálculo
-    df["minutos"] = df.apply(calcular_minutos, axis=1)
-
-    # Semáforo
-    def semaforo(m):
-        if m >= 120:
-            return "🔴"
-        if m >= 60:
-            return "🟡"
-        return "🟢"
-
-    df["semaforo"] = df["minutos"].apply(semaforo)
-
-    # Ordenar por fecha desc
-    df = df.sort_values(by="fecha_hora_dt", ascending=False)
-
-    columnas_internas = ["min_final", "row_id", "fecha_hora_dt"]
-
-    df = df.copy()
-    for col in columnas_internas:
-        if col in df.columns:
-            df[col] = df[col]
-
-    # -------------------------------------------
-    # FILTROS
-    # -------------------------------------------
-
-    # 1) Inicializar estado de filtros
-    if "filtro_cuarto" not in st.session_state:
-        st.session_state.filtro_cuarto = []
-
-    if "filtro_status" not in st.session_state:
-        st.session_state.filtro_status = []
-
-    if "filtro_issue" not in st.session_state:
-        # Por defecto: mostrar todos (opción lógica, no filtro)
-        st.session_state.filtro_issue = ["Todos"]
-
-    # Opciones del filtro de issue
-    opciones_issue = ["Todos", "Sí", "No"]
-
-    # 2) Controles visuales
-    colA, colB, colC = st.columns(3)
-
-    with colA:
-        st.session_state.filtro_cuarto = st.multiselect(
-            "Filtrar por cuarto",
-            df["cuarto"].unique(),
-            default=st.session_state.filtro_cuarto,
-        )
-
-    with colB:
-        st.session_state.filtro_status = st.multiselect(
-            "Filtrar por status",
-            df["status"].unique(),
-            default=st.session_state.filtro_status,
-        )
-
-    with colC:
-        st.session_state.filtro_issue = st.multiselect(
-            "Filtrar por issue",
-            opciones_issue,
-            default=st.session_state.filtro_issue,
-        )
-
-    # 3) Aplicar filtros
-    df_filtrado = df.copy()
-
-    # Filtrar por cuarto
-    if st.session_state.filtro_cuarto:
-        df_filtrado = df_filtrado[
-            df_filtrado["cuarto"].isin(st.session_state.filtro_cuarto)
-        ]
-
-    # Filtrar por status
-    if st.session_state.filtro_status:
-        df_filtrado = df_filtrado[
-            df_filtrado["status"].isin(st.session_state.filtro_status)
-        ]
-
-    # Filtrar por issue
-    f_issue = st.session_state.filtro_issue
-
-    # Si incluye "Todos" --> no filtramos nada por issue
-    if "Todos" not in f_issue:
-        # Sólo "Sí"
-        if "Sí" in f_issue and "No" not in f_issue:
-            df_filtrado = df_filtrado[df_filtrado["issue"] == True]
-        # Sólo "No"
-        elif "No" in f_issue and "Sí" not in f_issue:
-            df_filtrado = df_filtrado[df_filtrado["issue"] == False]
-        # Si marca "Sí" y "No" sin "Todos" -> equivale a mostrar todo, no se aplica filtro extra
-    
-    # -------------------------------------------
-    # TABLA PRINCIPAL
-    # -------------------------------------------
-
-    st.markdown('<div id="pos_tabla"></div>', unsafe_allow_html=True)
-       
-    st.markdown("<div class='subtitulo-seccion'>Requisiciones registradas</div>", unsafe_allow_html=True)
-
-    tabla_container = st.empty()
-
-    # Autorefresco solamente del contenedor
-    if "last_refresh" not in st.session_state:
-        st.session_state.last_refresh = time.time()
-
-    # Cada 15 segundos refrescar SOLO la tabla
-    if time.time() - st.session_state.last_refresh > 15:
-        st.session_state.last_refresh = time.time()
-        st.session_state.refresh_flag = True
-    else:
-        st.session_state.refresh_flag = False
-
-    # Columnas internas que no deben verse
-    columnas_ocultas = ["fecha_hora_dt","min_final", "minuto_final", "row_id"]
-
-    # Asegurar que min_final sea entero (sin decimales)
-    df_filtrado["min_final"] = pd.to_numeric(
-        df_filtrado.get("min_final"),
-        errors="coerce"
-    ).astype("Int64")
-
-    # ---------------------------------------------------------
-    # DESCARGAR TABLA EN EXCEL (VERSIÓN FILTRADA)
-    # ---------------------------------------------------------
-    df_export = df_filtrado.copy()
-
-    if "minuto_final" in df_export.columns:
-        df_export["minuto_final"] = pd.to_numeric(df_export["minuto_final"], errors="coerce").round(0).astype("Int64")
-    
-    csv_bytes = df_to_csv_bytes(df_export)
-
-    st.download_button(
-        label="📥 Descargar Excel",
-        data=csv_bytes,
-        file_name=f"requisiciones_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv", mime="text/csv")
-
-    # Ocultar columnas internas DESPUÉS de filtrar y convertir
-    df_visible = df_filtrado.drop(columns=columnas_ocultas, errors="ignore")
-
-    if st.session_state.refresh_flag:
-        tabla_container.dataframe(df_visible, hide_index=True, use_container_width=True)
-    else:
-        tabla_container.dataframe(df_visible, hide_index=True, use_container_width=True)
-
-    # ----------------------------------------------
-    # FORMULARIO DE EDICIÓN (VERSIÓN FINAL)
-    # ----------------------------------------------
-
-    # Ancla para evitar que Streamlit suba al inicio
-    st.markdown("<a id='form_anchor'></a>", unsafe_allow_html=True)
-
-    # Variable que controla si se muestra o no el formulario
-    if "mostrar_edicion" not in st.session_state:
-        st.session_state.mostrar_edicion = False
-
-    # Botón para mostrar/ocultar formulario sin saltos
-    if st.button("✏️ Editar una requisición"):
-        st.session_state.mostrar_edicion = not st.session_state.mostrar_edicion
-
-    # Contenedor del formulario (solo se construye si está activo)
-    form_container = st.container(height=600)
-
-    st.markdown("""
-    <style>
-    /* Selecciona SOLO el contenedor con height=600px generado por Form Container */
-    div[direction="column"][height="600px"][data-testid="stVerticalBlock"] {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    /* Limpia los div hijos que hereden estilos */
-    div[direction="column"][height="600px"][data-testid="stVerticalBlock"] > div {
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    if st.session_state.mostrar_edicion:
-
-        with form_container:
-
-            # Forzar scroll hacia el formulario sin brincar arriba
-            st.markdown("""
-            <style>
-            /* Oculta completamente el sidebar */
-            .css-1d391kg {display: none;}
-            .css-1cypcdb {display: none;}
-            <style>
-            """, unsafe_allow_html=True)
-
-            # -----------------------
-            # Selección de ID a editar
-            # -----------------------
-            lista_ids = df["ID"].unique().tolist()
-            lista_ids_con_vacio = ["-- Seleccione --"] + lista_ids
-
-            id_editar = st.selectbox("Seleccione ID a editar:", lista_ids_con_vacio)
-
-            if id_editar != "-- Seleccione --":
-                fila = df[df["ID"] == id_editar].iloc[0]
-
-                # -----------------------
-                # Campos editables
-                # -----------------------
-
-                nuevo_status = st.selectbox(
-                    "Nuevo status:",
-                    ["Pendiente", "En proceso", "Entregado", "Cancelado", "No encontrado"],
-                    index=["Pendiente", "En proceso", "Entregado", "Cancelado", "No encontrado"].index(fila["status"])
-                )
-
-                nuevo_almacenista = st.text_input("Almacenista:", fila["almacenista"])
-                nuevo_issue = st.checkbox("Issue", value=(fila["issue"] is True))
-
-                # -----------------------
-                # Guardar cambios
-                # -----------------------
-                if st.button("Guardar cambios"):
-
-                    try:
-                        client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
-                        row_id = int(fila["row_id"])
-
-                        # Determinar nuevo min_final
-                        estados_finales = ["Entregado", "Cancelado", "No encontrado"]
-
-                        if nuevo_status in estados_finales:
-                            # Si ya tenía un min_final válido → se respeta
-                            if pd.notna(fila["min_final"]) and str(fila["min_final"]).strip() not in ["None", "", "nan"]:
-                                nuevo_min_final = int(fila["min_final"])
-                            else:
-                                # Congelamos los minutos actuales
-                                nuevo_min_final = int(fila["minutos"])
-                        else:
-                            # Si NO es final → se limpia
-                            nuevo_min_final = ""
-
-                        # Construir actualización
-                        update_cells = [
-                            {"column_id": COL_ID["status"], "value": nuevo_status},
-                            {"column_id": COL_ID["almacenista"], "value": nuevo_almacenista},
-                            {"column_id": COL_ID["issue"], "value": nuevo_issue},
-                            {"column_id": COL_ID["minuto_final"], "value": nuevo_min_final},
-                        ]
-
-                        update_row = smartsheet.models.Row()
-                        update_row.id = row_id
-                        update_row.cells = update_cells
-
-                        client.Sheets.update_rows(SHEET_ID, [update_row])
-
-                        st.success("Cambios guardados correctamente.")
-
-                        # Cerrar formulario
-                        st.session_state.mostrar_edicion = False
-
-                        # Refrescar la tabla SIN mover el scroll
-                        st.session_state.refresh_flag = True
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error("❌ Error al guardar cambios en Smartsheet.")
-                        st.write(e)
-
-# ============================================
-# 🔒 EVITAR QUE STREAMLIT SUBA EL SCROLL AL EDITAR
-# ============================================
-
-st.markdown("""
-<script>
-
-// Guardar posición del scroll en todo momento
-window.addEventListener('scroll', function() {
-    sessionStorage.setItem('scrollPos', window.scrollY);
-});
-
-// Función fuerte para restaurar scroll varias veces
-function restoreScroll() {
-    const y = sessionStorage.getItem('scrollPos');
-    if (y !== null) {
-        window.scrollTo(0, parseInt(y));
-    }
-}
-
-// MutationObserver para detectar cualquier re-render de Streamlit
-const observer = new MutationObserver((mutations) => {
-    // Streamlit re-render detected → intentar restaurar varias veces
-    restoreScroll();
-    setTimeout(restoreScroll, 30);
-    setTimeout(restoreScroll, 80);
-    setTimeout(restoreScroll, 150);
-    setTimeout(restoreScroll, 300);
-});
-
-// Observar toda la app
-observer.observe(document.body, { childList: true, subtree: true });
-
-// Restaurar al iniciar
-window.addEventListener('load', restoreScroll);
-
-</script>
-""", unsafe_allow_html=True)
+    # ---------------------------------------
+    # DETECTAR CAMBIOS
+    # ---------------------------------------
+    cambios = edited.merge(df, indicator=True, how="outer")
+    cambios = cambios[cambios["_merge"] != "both"]
+
+    if not cambios.empty:
+        st.warning("⚠ Se detectaron cambios. Guardando...")
+
+        try:
+            updates = []
+
+            for idx, row in edited.iterrows():
+                original = df[df["row_id"] == row["row_id"]].iloc[0]
+
+                # checkboxes
+                cambios_checkbox = {
+                    "recolectado": row["recolectado"],
+                    "empaque": row["empaque"],
+                    "checklist": row["checklist"],
+                    "cierre": row["cierre"],
+                }
+
+                # notas
+                cambios_notas = row["notas"]
+
+                update_row = smartsheet.models.Row()
+                update_row.id = int(row["row_id"])
+                update_row.cells = []
+
+                for col, val in cambios_checkbox.items():
+                    cell = smartsheet.models.Cell()
+                    cell.column_id = COL_ID[col]
+                    cell.value = val
+                    update_row.cells.append(cell)
+
+                cell = smartsheet.models.Cell()
+                cell.column_id = COL_ID["notas"]
+                cell.value = cambios_notas
+                update_row.cells.append(cell)
+
+                updates.append(update_row)
+
+            client.Sheets.update_rows(SHEET_ID, updates)
+            st.success("✔ Cambios guardados correctamente")
+            st.rerun()
+
+        except Exception as e:
+            st.error("❌ Error al guardar los cambios")
+            st.write(e)
