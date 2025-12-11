@@ -159,6 +159,9 @@ tab1, tab2 = st.tabs(["➕ Registrar Orden", "📦 Almacén"])
 # ===========================
 # TAB 1 – Registrar Producto
 # ===========================
+
+with tab 1:
+
 st.header("Registrar Producto Terminado")
 
 # Inicializar session_state
@@ -393,3 +396,4 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
