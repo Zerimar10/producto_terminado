@@ -280,13 +280,16 @@ with tab2:
     rows = []
     for row in sheet.rows:
         data = {"row_id": row.id}
+
         for cell in row.cells:
             cid = cell.column_id
             val = cell.value
 
+            # Detectar a qué columna pertenece
             for k, v in COL_ID.items():
                 if cid == v:
                     data[k] = val
+
         rows.append(data)
 
     df = pd.DataFrame(rows).fillna("")
@@ -294,7 +297,7 @@ with tab2:
     # Asegurar tipos booleanos correctos
     for col in ["recolectado", "empaque", "checklist", "cierre"]:
         df[col] = df[col].apply(lambda x: True if x is True else False)
-
+        
     # ---------------------------------------
     # COLUMNA VISUAL DE COLOR VERDE
     # ---------------------------------------
@@ -384,6 +387,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
