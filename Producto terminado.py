@@ -33,18 +33,12 @@ def cargar_desde_smartsheet():
     try:
         client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
         response = client.Sheets.get_sheet(SHEET_ID)
-        sheet = response # asegurar que sheet es realmente la hoja
+        sheet = response 
         
         rows_data = []
 
-        # Si sheet.rows NO existe, mostrar error útil
-        if not hasattr(sheet, "rows"):
-            st.error("❌ Error: Smartsheet no devolvió 'rows'. ¿Filtro activo en la hoja?")
-            st.stop()
-
         for row in sheet.rows:
-            data = {}
-            data["row_id"] = row.id
+            data = {"row_id": row.id}
 
             for cell in row.cells:
                 cid = cell.column_id
@@ -54,15 +48,9 @@ def cargar_desde_smartsheet():
                     if cid == col_id:
                         data[key] = val
 
-            if "ID" in data:
-                rows_data.append(data)
+            rows_data.append(data)
 
-        df = pd.DataFrame(rows_data)
-
-        df = df.fillna("")
-
-        df["fecha_hora_dt"] = pd.to_datetime(df["fecha_hora"], errors="coerce")
-
+        df = pd.DataFrame(rows_data).fillna("")
         return df
 
     except Exception as e:
@@ -396,6 +384,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
