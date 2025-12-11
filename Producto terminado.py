@@ -1,7 +1,7 @@
 import streamlit as st
 import smartsheet
 
-TOKEN = RPRG2Wx6jeoVISCWo03UWnDBWbSSixedmbc5d
+TOKEN = st.secrets["SMARTSHEET_TOKEN"]
 SHEET_ID = 3463316224561028 # Tu Sheet ID numérico correcto
 
 client = smartsheet.Smartsheet(TOKEN)
