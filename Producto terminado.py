@@ -18,5 +18,3 @@ try:
 except Exception as e:
     st.error("Error al obtener columnas:")
     st.write(e)
-
-
