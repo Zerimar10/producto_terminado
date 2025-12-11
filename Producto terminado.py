@@ -162,101 +162,101 @@ tab1, tab2 = st.tabs(["➕ Registrar Orden", "📦 Almacén"])
 
 with tab1:
 
-st.header("Registrar Producto Terminado")
+    st.header("Registrar Producto Terminado")
 
-# Inicializar session_state
-if "cuarto" not in st.session_state:
-    st.session_state.cuarto = ""
-    st.session_state.numero_parte = ""
-    st.session_state.numero_orden = ""
-    st.session_state.cantidad = 1
-
-if "msg_ok" not in st.session_state:
-    st.session_state.msg_ok = False
-
-
-# ------------------------------
-# FORMULARIO
-# ------------------------------
-lista_cuartos = [
-    "INTRODUCER","PU1","PU2","PU3","PU4","PVC1","PVC2","PVC3A","PVC3B",
-    "PVC6","PVC7","PVC8","PVC9","PVCS","PAK1","MGLY","MASM1","MMCL",
-    "MM MOLD","MMFP","RESORTES"
-]
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.selectbox("Cuarto", lista_cuartos, key="cuarto")
-    st.text_input("Número de Parte", key="numero_parte")
-
-with col2:
-    st.text_input("Número de Orden", key="numero_orden")
-    st.number_input("Cantidad", min_value=1, step=1, key="cantidad")
-
-
-# ------------------------------
-# MENSAJE DE ÉXITO
-# ------------------------------
-if st.session_state.msg_ok:
-    st.success("✔ Registro enviado correctamente.")
-    st.session_state.msg_ok = False
-
-# ------------------------------
-# BOTÓN GUARDAR
-# ------------------------------
-if st.button("Guardar Registro"):
-
-    # Obtener hora local UTC-7
-    hora_local = datetime.utcnow() - timedelta(hours=7)
-
-    # Crear nuevo registro
-    nueva_fila = {
-        "cuarto": st.session_state.cuarto,
-        "numero_parte": st.session_state.numero_parte,
-        "numero_orden": st.session_state.numero_orden,
-        "cantidad": st.session_state.cantidad,
-        "fecha_hora": hora_local.strftime("%Y-%m-%d %H:%M:%S"),
-        "recolectado": False,
-        "empaque": False,
-        "checklist": False,
-        "cierre": False,
-        "notas": "",
-    }
-
-    # Enviar a Smartsheet
-    try:
-        client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
-
-        new_row = smartsheet.models.Row()
-        new_row.to_top = True
-
-        # Función para agregar celdas
-        def add(col, val):
-            cell = smartsheet.models.Cell()
-            cell.column_id = COL_ID[col]
-            cell.value = val
-            new_row.cells.append(cell)
-
-        # Crear celdas
-        for campo, valor in nueva_fila.items():
-            add(campo, valor)
-
-        # Enviar fila
-        client.Sheets.add_rows(SHEET_ID, [new_row])
-
-        # Limpiar formulario
+    # Inicializar session_state
+    if "cuarto" not in st.session_state:
         st.session_state.cuarto = ""
         st.session_state.numero_parte = ""
         st.session_state.numero_orden = ""
         st.session_state.cantidad = 1
 
-        st.session_state.msg_ok = True
-        st.rerun()
+    if "msg_ok" not in st.session_state:
+        st.session_state.msg_ok = False
 
-    except Exception as e:
-        st.error("❌ Error al guardar en Smartsheet.")
-        st.write(e)
+
+    # ------------------------------
+    # FORMULARIO
+    # ------------------------------
+    lista_cuartos = [
+        "INTRODUCER","PU1","PU2","PU3","PU4","PVC1","PVC2","PVC3A","PVC3B",
+        "PVC6","PVC7","PVC8","PVC9","PVCS","PAK1","MGLY","MASM1","MMCL",
+        "MM MOLD","MMFP","RESORTES"
+    ]
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.selectbox("Cuarto", lista_cuartos, key="cuarto")
+        st.text_input("Número de Parte", key="numero_parte")
+
+    with col2:
+        st.text_input("Número de Orden", key="numero_orden")
+        st.number_input("Cantidad", min_value=1, step=1, key="cantidad")
+
+
+    # ------------------------------
+    # MENSAJE DE ÉXITO
+    # ------------------------------
+    if st.session_state.msg_ok:
+        st.success("✔ Registro enviado correctamente.")
+        st.session_state.msg_ok = False
+
+    # ------------------------------
+    # BOTÓN GUARDAR
+    # ------------------------------
+    if st.button("Guardar Registro"):
+
+        # Obtener hora local UTC-7
+        hora_local = datetime.utcnow() - timedelta(hours=7)
+
+        # Crear nuevo registro
+        nueva_fila = {
+            "cuarto": st.session_state.cuarto,
+            "numero_parte": st.session_state.numero_parte,
+            "numero_orden": st.session_state.numero_orden,
+            "cantidad": st.session_state.cantidad,
+            "fecha_hora": hora_local.strftime("%Y-%m-%d %H:%M:%S"),
+            "recolectado": False,
+            "empaque": False,
+            "checklist": False,
+            "cierre": False,
+            "notas": "",
+        }
+
+        # Enviar a Smartsheet
+        try:
+            client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
+
+            new_row = smartsheet.models.Row()
+            new_row.to_top = True
+
+            # Función para agregar celdas
+            def add(col, val):
+                cell = smartsheet.models.Cell()
+                cell.column_id = COL_ID[col]
+                cell.value = val
+                new_row.cells.append(cell)
+
+            # Crear celdas
+            for campo, valor in nueva_fila.items():
+                add(campo, valor)
+
+            # Enviar fila
+            client.Sheets.add_rows(SHEET_ID, [new_row])
+
+            # Limpiar formulario
+            st.session_state.cuarto = ""
+            st.session_state.numero_parte = ""
+            st.session_state.numero_orden = ""
+            st.session_state.cantidad = 1
+
+            st.session_state.msg_ok = True
+            st.rerun()
+
+        except Exception as e:
+            st.error("❌ Error al guardar en Smartsheet.")
+            st.write(e)
     
 # ============================================================
 # TAB 2 — PANEL DE ALMACÉN
@@ -396,5 +396,6 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
