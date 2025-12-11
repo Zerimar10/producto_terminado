@@ -325,8 +325,7 @@ with tab2:
 
     df_editable = df[[
         "cuarto", "numero_parte", "numero_orden", "cantidad", "fecha_hora",
-        "recolectado", "empaque", "checklist", "cierre", "notas",
-        "R", "E", "C", "F", "row_id"
+        "recolectado", "empaque", "checklist", "cierre", "notas"
     ]]
 
     edited = st.data_editor(
@@ -339,12 +338,10 @@ with tab2:
             "checklist": st.column_config.CheckboxColumn("Checklist"),
             "cierre": st.column_config.CheckboxColumn("Cierre"),
             "notas": st.column_config.TextColumn("Notas"),
-            "R": " ",
-            "E": " ",
-            "C": " ",
-            "F": " ",
         }
     )
+
+    edited["row_id"] = df["row_id"]
 
     # ---------------------------------------
     # DETECTAR CAMBIOS
@@ -396,6 +393,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
