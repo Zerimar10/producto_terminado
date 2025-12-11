@@ -3,8 +3,7 @@ import smartsheet
 from datetime import datetime, timedelta
 import pandas as pd
 
-def df_to_csv_bytes(df):  
-    return df.to_csv(index=False, encoding="utf-8-sig").encode()
+st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
 
 ALMACEN_PASSWORD = st.secrets["ALMACEN_PASSWORD"]
 
@@ -406,6 +405,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
