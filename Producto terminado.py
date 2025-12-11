@@ -273,22 +273,27 @@ with tab1:
 
 with tab2:
 
-    # Expansión de tabla SOLO en el Tab 2
     st.markdown("""
     <style>
-    /* Solo afecta a los elementos dentro del Tab 2 usando un scope */
-    div[data-testid="stTabContent"] div[data-testid="stDataEditor"] > div {
-        width: 100% !important;
-    }
 
-    div[data-testid="stTabContent"] div[data-testid="stDataEditor-Viewport"] {
-        width: 100% !important;
-        overflow-x: auto !important;
-    }
+        /* Fuerza ancho completo SOLO dentro del contenido del Tab 2 */
 
-    div[data-testid="stTabContent"] div[data-testid="stVerticalBlock"] {
-        width: 100% !important;
-    }
+        /* Ajusta el bloque que contiene la tabla dentro del Tab */
+        div[data-testid="stHorizontalBlock"] div[data-testid="stDataEditor"] {
+            width: 100% !important;
+        }
+
+        /* Ajusta el viewport interno del editor */
+        div[data-testid="stHorizontalBlock"] div[data-testid="stDataEditor-Viewport"] {
+            width: 100% !important;
+            overflow-x: auto !important;
+        }
+
+        /* Ajusta los bloques internos */
+        div[data-testid="stHorizontalBlock"] div[data-testid="stVerticalBlock"] {
+            width: 100% !important;
+        }
+
     </style>
     """, unsafe_allow_html=True)
 
@@ -424,6 +429,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
