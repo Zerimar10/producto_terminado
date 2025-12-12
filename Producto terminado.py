@@ -244,6 +244,10 @@ with tab1:
                         }
                     ])
 
+                    new_row = smartsheet.models.Row()
+                    new_row.to_top = True
+                    new_row.cells = cells
+
                     client.Sheets.add_rows(SHEET_ID, [new_row])
 
                     st.success("✅ Registro guardado correctamente")
@@ -411,6 +415,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
