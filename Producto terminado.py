@@ -1,7 +1,15 @@
 import streamlit as st
 import smartsheet
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
+
+fecha_hora = datetime.now() - timedelta(hours=7)
+
+cells = []
+
+cells.append({
+    "columnId": COL_ID["fecha_hora"], "value": fecha_hora.strftime("%y-%m-%d %H: %M: %S")
+})
 
 st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
 
@@ -415,6 +423,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
