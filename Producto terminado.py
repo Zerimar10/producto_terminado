@@ -305,24 +305,22 @@ with tab2:
     sheet = client.Sheets.get_sheet(SHEET_ID)
 
     rows = []
-    for row in sheet.rows:
-        data = {"row_id": row.id}
+    for r in sheet.rows:
+        data = {"row_id": r.id}
 
-        for cell in row.cells:
-            cid = cell.column_id
-            val = cell.value
-
-            # Detectar a qué columna pertenece
+        # llenar por columna
+        for cell in r.cells:
             for k, v in COL_ID.items():
-                if cid == v:
-                    data[k] = val
+                if cell.column_id == v:
+                    data[k] = cell.value
+                
+            # ✅ filtrar filas realmente vacías (deja pasar si hay orden o parte)
+            if str(data.get("numero_orden", "")).strip() == "" and str(data.get("numero_parte", "")).strip() == "":
+                continue
 
-        valores = [v for k, v in data.items() if k != "row_id"]
-
-        if any(v not in [None, ""] for v in valores):
             rows.append(data)
 
-    df = pd.DataFrame(rows).fillna("")
+        df = pd.DataFrame(rows).fillna("")
 
     st.write("Filas reales detectadas:", len(df))
     st.write(df)
@@ -450,6 +448,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
