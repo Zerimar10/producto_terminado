@@ -391,11 +391,18 @@ with tab2:
                     update_row.id = int(row["row_id"])
                     update_row.cells = []
 
-                    for col in cols_editables:
+                    # Checkboxes (bool)
+                    for col in COLS_CHECKBOX:
                         cell = smartsheet.models.Cell()
                         cell.column_id = COL_ID[col]
-                        cell.value = row[col]
+                        cell.value = bool(row[col])
                         update_row.cells.append(cell)
+
+                    # Notas (texto)
+                    cell = smartsheet.models.Cell()
+                    cell.column_id = COL_ID["notas"]
+                    cell.value = str(row["notas"]) if row["notas"] else ""
+                    update_row.cells.append(cell)
 
                     updates.append(update_row)
 
@@ -417,6 +424,7 @@ with tab2:
     if time.time() - st.session_state.last_refresh > 30:
         st.session_state.last_refresh = time.time()
         st.rerun()
+
 
 
 
