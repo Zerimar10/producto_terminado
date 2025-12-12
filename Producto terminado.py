@@ -347,10 +347,6 @@ with tab2:
     # ---------------------------------------
     st.markdown("### ✏️ Editar registros")
 
-    df = pd.DataFrame(rows).fillna("")
-
-    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0).astype(int)
-
     COLUMNAS_TABLA = [
         "cuarto", "numero_parte", "numero_orden", "cantidad", "fecha_hora",
         "recolectado", "empaque", "checklist", "cierre", "notas"
@@ -430,6 +426,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
