@@ -159,6 +159,12 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+lista_cuartos = [
+    "INTRODUCER","PU1","PU2","PU3","PU4","PVC1","PVC2","PVC3A","PVC3B",
+    "PVC6","PVC7","PVC8","PVC9","PVCS","PAK1","MGLY","MASM1","MMCL",
+    "MM MOLD","MMFP","RESORTES"
+]
+
 # ============================================================
 # TABS
 # ============================================================
@@ -395,6 +401,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
