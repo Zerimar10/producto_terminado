@@ -166,12 +166,11 @@ st.markdown("""
 tab1, tab2 = st.tabs(["➕ Registrar Orden", "📦 Almacén"])
 
 # ============================================================
-# TAB 1 – REGISTRAR PRODUCTO TERMINADO
+# TAB 1 – REGISTRAR PRODUCTO TERMINADO (CORREGIDO)
 # ============================================================
 
 with tab1:
 
-    # Contenedor centrado (para que no se vea tan ancho)
     col_izq, col_centro, col_der = st.columns([1, 2, 1])
 
     with col_centro:
@@ -179,114 +178,63 @@ with tab1:
         st.header("Registrar Producto Terminado")
 
         # ----------------------------------------------------
-        # Inicializar session_state (SOLO UNA VEZ)
+        # FORMULARIO (manejo automático del estado)
         # ----------------------------------------------------
-        if "form_cuarto" not in st.session_state:
-            st.session_state.form_cuarto = lista_cuartos[0]
+        with st.form("form_registro_pt", clear_on_submit=True):
 
-        if "form_numero_parte" not in st.session_state:
-            st.session_state.form_numero_parte = ""
+            cuarto = st.selectbox(
+                "Cuarto",
+                lista_cuartos
+            )
 
-        if "form_numero_orden" not in st.session_state:
-            st.session_state.form_numero_orden = ""
+            numero_parte = st.text_input(
+                "Número de Parte"
+            )
 
-        if "form_cantidad" not in st.session_state:
-            st.session_state.form_cantidad = 1
+            numero_orden = st.text_input(
+                "Número de Orden"
+            )
 
-        if "msg_ok" not in st.session_state:
-            st.session_state.msg_ok = False
+            cantidad = st.number_input(
+                "Cantidad",
+                min_value=1,
+                step=1,
+                value=1
+            )
 
-        # ----------------------------------------------------
-        # FORMULARIO
-        # ----------------------------------------------------
-        cuarto = st.selectbox(
-            "Cuarto",
-            lista_cuartos,
-            key="form_cuarto"
-        )
-
-        numero_parte = st.text_input(
-            "Número de Parte",
-            key="form_numero_parte"
-        )
-
-        numero_orden = st.text_input(
-            "Número de Orden",
-            key="form_numero_orden"
-        )
-
-        cantidad = st.number_input(
-            "Cantidad",
-            min_value=1,
-            step=1,
-            key="form_cantidad"
-        )
+            guardar = st.form_submit_button("Guardar Registro")
 
         # ----------------------------------------------------
-        # BOTÓN GUARDAR
+        # GUARDAR EN SMARTSHEET
         # ----------------------------------------------------
-        if st.button("Guardar Registro"):
+        if guardar:
 
             if not numero_parte or not numero_orden:
                 st.error("❌ Número de parte y número de orden son obligatorios")
 
             else:
                 try:
-                    # -----------------------------
-                    # GUARDAR EN SMARTSHEET
-                    # -----------------------------
                     new_row = smartsheet.models.Row()
                     new_row.to_bottom = True
 
-                    new_row.cells.append({
-                        "column_id": COL_ID["cuarto"],
-                        "value": cuarto
-                    })
-                    new_row.cells.append({
-                        "column_id": COL_ID["numero_parte"],
-                        "value": numero_parte
-                    })
-                    new_row.cells.append({
-                        "column_id": COL_ID["numero_orden"],
-                        "value": numero_orden
-                    })
-                    new_row.cells.append({
-                        "column_id": COL_ID["cantidad"],
-                        "value": cantidad
-                    })
-                    new_row.cells.append({
-                        "column_id": COL_ID["fecha_hora"],
-                        "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                    new_row.cells.extend([
+                        {"column_id": COL_ID["cuarto"], "value": cuarto},
+                        {"column_id": COL_ID["numero_parte"], "value": numero_parte},
+                        {"column_id": COL_ID["numero_orden"], "value": numero_orden},
+                        {"column_id": COL_ID["cantidad"], "value": cantidad},
+                        {
+                            "column_id": COL_ID["fecha_hora"],
+                            "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                    ])
 
                     client.Sheets.add_rows(SHEET_ID, [new_row])
 
-                    st.session_state.msg_ok = True
-
-                    # -----------------------------
-                    # RESET SEGURO DEL FORMULARIO
-                    # -----------------------------
-                    for k in [
-                        "form_cuarto",
-                        "form_numero_parte",
-                        "form_numero_orden",
-                        "form_cantidad"
-                    ]:
-                        if k in st.session_state:
-                            del st.session_state[k]
-
-                    st.rerun()
+                    st.success("✅ Registro guardado correctamente")
 
                 except Exception as e:
                     st.error("❌ Error al guardar en Smartsheet")
                     st.write(e)
-
-        # ----------------------------------------------------
-        # MENSAJE DE ÉXITO
-        # ----------------------------------------------------
-        if st.session_state.msg_ok:
-            st.success("✅ Registro guardado correctamente")
-            st.session_state.msg_ok = False
     
 # ============================================================
 # TAB 2 — PANEL DE ALMACÉN
@@ -447,6 +395,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
