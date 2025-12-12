@@ -408,15 +408,16 @@ with tab2:
 
                 st.success("✅ Cambios guardados y actualizados")
 
-                st.experimental_rerun()
+                st.rerun()
 
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
 
-if time.time() - st.session_state.last_refresh > 30:
-    st.session_state.last_refresh = time.time()
-    st.experimental_rerun()
+    if time.time() - st.session_state.last_refresh > 30:
+        st.session_state.last_refresh = time.time()
+        st.rerun()
+
 
 
 
