@@ -1,6 +1,6 @@
 import streamlit as st
 import smartsheet
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 
 st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
@@ -16,6 +16,24 @@ SHEET_ID = int(st.secrets["SHEET_ID"])
 
 client = smartsheet.Smartsheet(SMARTSHEET_TOKEN)
 client.errors_as_exceptions(True)
+
+def cargar_sheet_y_col_ids():
+    sheet = client.Sheets.get_sheet(SHEET_ID)
+
+    # Mapa: "titulo_columna" -> columnId
+    col_ids = {c.title.strip().lower(): c.id for c in sheet.columns}
+
+    # Valida que existan (ajusta nombres si tus columnas se llaman distinto)
+    requeridas = ["cuarto", "numero_parte", "numero_orden", "cantidad", "fecha_hora",
+                  "recolectado", "empaque", "checklist", "cierre", "notas"]
+    faltan = [x for x in requeridas if x not in col_ids]
+    if faltan:
+        st.error(f"Faltan columnas en Smartsheet: {faltan}. Revisa títulos exactos.")
+        st.stop()
+
+    return sheet, col_ids
+
+sheet, COL_ID = cargar_sheet_y_col_ids()
 
 # ============================================================
 # CONSTANTES SMARTSHEET
@@ -432,6 +450,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
