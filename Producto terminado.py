@@ -299,7 +299,9 @@ with tab2:
                 if cid == v:
                     data[k] = val
 
-        if any(data.get(c) not in [None, "", 0] for c in ["numero_orden", "numero_parte"]):
+        valores = [v for k, v in data.items() if k != "row_id"]
+
+        if any(v not in [None, ""] for v in valores):
             rows.append(data)
 
     df = pd.DataFrame(rows).fillna("")
@@ -429,6 +431,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
