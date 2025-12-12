@@ -291,6 +291,10 @@ with tab2:
 
     st.success("🔓 Acceso concedido")
 
+    for col in ["recolectado", "empaque", "checklist", "cierre"]:
+        if col in df.columns:
+            df[col] = df[col].astypse(bool).astype(int)
+
     # ---------------------------------------
     # INDICADORES RÁPIDOS
     # ---------------------------------------
@@ -416,6 +420,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
