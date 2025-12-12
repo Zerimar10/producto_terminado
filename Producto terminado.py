@@ -279,7 +279,7 @@ with tab1:
 
 with tab2:
 
-    st.markdown("## 📦 Panel de Almacén – Producto Terminado")
+    st.markdown("## 📦 Producto Terminado")
 
     # ---------------------------------------
     # AUTENTICACIÓN
@@ -411,6 +411,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
