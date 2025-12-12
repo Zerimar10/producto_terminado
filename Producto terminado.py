@@ -387,6 +387,9 @@ with tab2:
                 # ¿Cambió esta fila?
                 if not row[cols_editables].equals(original_row[cols_editables]):
 
+                    COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
+                    COLS_TEXTO = ["notas"]
+
                     update_row = smartsheet.models.Row()
                     update_row.id = int(row["row_id"])
                     update_row.cells = []
@@ -424,6 +427,7 @@ with tab2:
     if time.time() - st.session_state.last_refresh > 30:
         st.session_state.last_refresh = time.time()
         st.rerun()
+
 
 
 
