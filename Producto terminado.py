@@ -165,112 +165,128 @@ st.markdown("""
 
 tab1, tab2 = st.tabs(["➕ Registrar Orden", "📦 Almacén"])
 
-# ===========================
-# TAB 1 – Registrar Producto
-# ===========================
+# ============================================================
+# TAB 1 – REGISTRAR PRODUCTO TERMINADO
+# ============================================================
 
 with tab1:
 
-    # contenedor centrado para que Tab1 no se vea tan ancho
+    # Contenedor centrado (para que no se vea tan ancho)
     col_izq, col_centro, col_der = st.columns([1, 2, 1])
 
     with col_centro:
+
         st.header("Registrar Producto Terminado")
 
-        # ------------------------------
-        # FORMULARIO
-        # ------------------------------
-        lista_cuartos = [
-            "INTRODUCER","PU1","PU2","PU3","PU4","PVC1","PVC2","PVC3A","PVC3B",
-            "PVC6","PVC7","PVC8","PVC9","PVCS","PAK1","MGLY","MASM1","MMCL",
-            "MM MOLD","MMFP","RESORTES"
-        ]
+        # ----------------------------------------------------
+        # Inicializar session_state (SOLO UNA VEZ)
+        # ----------------------------------------------------
+        if "form_cuarto" not in st.session_state:
+            st.session_state.form_cuarto = lista_cuartos[0]
 
-        # Inicializar solo una vez
+        if "form_numero_parte" not in st.session_state:
+            st.session_state.form_numero_parte = ""
+
+        if "form_numero_orden" not in st.session_state:
+            st.session_state.form_numero_orden = ""
+
+        if "form_cantidad" not in st.session_state:
+            st.session_state.form_cantidad = 1
+
         if "msg_ok" not in st.session_state:
             st.session_state.msg_ok = False
 
-        col1, col2 = st.columns(2)
+        # ----------------------------------------------------
+        # FORMULARIO
+        # ----------------------------------------------------
+        cuarto = st.selectbox(
+            "Cuarto",
+            lista_cuartos,
+            key="form_cuarto"
+        )
 
-        with col1:
-            cuarto = st.selectbox(
-                "Cuarto",
-                lista_cuartos,
-                key="form_cuarto"
-            )
-            numero_parte = st.text_input(
-                "Número de Parte",
-                key="form_numero_parte"
-            )
+        numero_parte = st.text_input(
+            "Número de Parte",
+            key="form_numero_parte"
+        )
 
-        with col2:
-            numero_orden = st.text_input(
-                "Número de Orden",
-                key="form_numero_orden"
-            )
-            cantidad = st.number_input(
-                "Cantidad",
-                min_value=1,
-                step=1,
-                key="form_cantidad"
-            )
+        numero_orden = st.text_input(
+            "Número de Orden",
+            key="form_numero_orden"
+        )
 
-        # ------------------------------
-        # MENSAJE DE ÉXITO
-        # ------------------------------
-        if st.session_state.msg_ok:
-            st.success("✔ Registro enviado correctamente.")
-            st.session_state.msg_ok = False
+        cantidad = st.number_input(
+            "Cantidad",
+            min_value=1,
+            step=1,
+            key="form_cantidad"
+        )
 
-        # ------------------------------
+        # ----------------------------------------------------
         # BOTÓN GUARDAR
-        # ------------------------------
+        # ----------------------------------------------------
         if st.button("Guardar Registro"):
 
-            hora_local = datetime.utcnow() - timedelta(hours=7)
+            if not numero_parte or not numero_orden:
+                st.error("❌ Número de parte y número de orden son obligatorios")
 
-            nueva_fila = {
-                "cuarto": st.session_state.form_cuarto,
-                "numero_parte": st.session_state.form_numero_parte,
-                "numero_orden": st.session_state.form_numero_orden,
-                "cantidad": st.session_state.form_cantidad,
-                "fecha_hora": hora_local.strftime("%Y-%m-%d %H:%M:%S"),
-                "recolectado": False,
-                "empaque": False,
-                "checklist": False,
-                "cierre": False,
-                "notas": "",
-            }
+            else:
+                try:
+                    # -----------------------------
+                    # GUARDAR EN SMARTSHEET
+                    # -----------------------------
+                    new_row = smartsheet.models.Row()
+                    new_row.to_bottom = True
 
-            try:
-                client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
+                    new_row.cells.append({
+                        "column_id": COL_ID["cuarto"],
+                        "value": cuarto
+                    })
+                    new_row.cells.append({
+                        "column_id": COL_ID["numero_parte"],
+                        "value": numero_parte
+                    })
+                    new_row.cells.append({
+                        "column_id": COL_ID["numero_orden"],
+                        "value": numero_orden
+                    })
+                    new_row.cells.append({
+                        "column_id": COL_ID["cantidad"],
+                        "value": cantidad
+                    })
+                    new_row.cells.append({
+                        "column_id": COL_ID["fecha_hora"],
+                        "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    })
 
-                new_row = smartsheet.models.Row()
-                new_row.to_top = True
+                    client.Sheets.add_rows(SHEET_ID, [new_row])
 
-                def add(col, val):
-                    cell = smartsheet.models.Cell()
-                    cell.column_id = COL_ID[col]
-                    cell.value = val
-                    new_row.cells.append(cell)
+                    st.session_state.msg_ok = True
 
-                for campo, valor in nueva_fila.items():
-                    add(campo, valor)
+                    # -----------------------------
+                    # RESET SEGURO DEL FORMULARIO
+                    # -----------------------------
+                    for k in [
+                        "form_cuarto",
+                        "form_numero_parte",
+                        "form_numero_orden",
+                        "form_cantidad"
+                    ]:
+                        if k in st.session_state:
+                            del st.session_state[k]
 
-                client.Sheets.add_rows(SHEET_ID, [new_row])
+                    st.rerun()
 
-                # 🔹 Reset limpio del formulario (SIN tocar widgets directos)
-                st.session_state.form_cuarto = lista_cuartos[0]
-                st.session_state.form_numero_parte = ""
-                st.session_state.form_numero_orden = ""
-                st.session_state.form_cantidad = 1
+                except Exception as e:
+                    st.error("❌ Error al guardar en Smartsheet")
+                    st.write(e)
 
-                st.session_state.msg_ok = True
-                st.rerun()
-
-            except Exception as e:
-                st.error("❌ Error al guardar en Smartsheet.")
-                st.write(e)
+        # ----------------------------------------------------
+        # MENSAJE DE ÉXITO
+        # ----------------------------------------------------
+        if st.session_state.msg_ok:
+            st.success("✅ Registro guardado correctamente")
+            st.session_state.msg_ok = False
     
 # ============================================================
 # TAB 2 — PANEL DE ALMACÉN
@@ -431,6 +447,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
