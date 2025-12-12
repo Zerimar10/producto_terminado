@@ -12,7 +12,7 @@ ALMACEN_PASSWORD = st.secrets["ALMACEN_PASSWORD"]
 # ============================================================
 
 SMARTSHEET_TOKEN = st.secrets["SMARTSHEET_TOKEN"]
-SHEET_ID = SHEET_ID # ya lo tienes definido
+SHEET_ID = int(st.secrets["SHEET _ID"])
 
 client = smartsheet.Smartsheet(SMARTSHEET_TOKEN)
 client.errors_as_exceptions(True)
@@ -411,6 +411,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
