@@ -2,6 +2,7 @@ import streamlit as st
 import smartsheet
 from datetime import datetime, timedelta, timezone
 import pandas as pd
+import time
 
 st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
 
@@ -39,33 +40,26 @@ sheet, COL_ID = cargar_sheet_y_col_ids()
 # FUNCIÓN → CARGAR DATOS DESDE SMARTSHEET
 # ============================================================
 
+@st.cache_data(ttl=30) # 🔄 cache inteligente (30 segundos)
 def cargar_desde_smartsheet():
-    try:
-        client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
-        response = client.Sheets.get_sheet(SHEET_ID)
-        sheet = response 
-        
-        rows_data = []
+    sheet = client.Sheets.get_sheet(SHEET_ID)
 
-        for row in sheet.rows:
-            data = {"row_id": row.id}
+    rows_data = []
 
-            for cell in row.cells:
-                cid = cell.column_id
-                val = cell.value
+    for row in sheet.rows:
+        data = {"row_id": row.id}
 
-                for key, col_id in COL_ID.items():
-                    if cid == col_id:
-                        data[key] = val
+        for cell in row.cells:
+            for key, col_id in COL_ID.items():
+                if cell.column_id == col_id:
+                    data[key] = cell.value
 
+        # ⛔ descartar filas completamente vacías
+        valores = [v for k, v in data.items() if k != "row_id"]
+        if any(v not in [None, ""] for v in valores):
             rows_data.append(data)
 
-        df = pd.DataFrame(rows_data).fillna("")
-        return df
-
-    except Exception as e:
-        st.error(f"❌ Error cargando Smartsheet: {e}")
-        st.stop()
+    return pd.DataFrame(rows_data).fillna("")
 
 # =============================
 # ENCABEZADO CORPORATIVO
@@ -262,6 +256,22 @@ with tab1:
 
 with tab2:
 
+    if "last_refresh" not in st.session_state:
+        st.session_state.last_refresh = time.time()
+
+    now = time.time()
+
+    #Forzar refresh cada 30 segundos
+    if now - st.session_state.last_refresh > 30:
+        cargar_desde_smartsheet.clear() # limpia cache
+        st.session_state.last_refresh = now
+
+    df = cargar_desde_smartsheet()
+
+    st.caption(
+        f"🔄 Última actualización automática: {time.strftime('%H:%M:%S', time.localtime(st.session_state.last_refresh))}"
+    )
+
     st.markdown("## 📦 Producto Terminado")
 
     # ---------------------------------------
@@ -363,6 +373,8 @@ with tab2:
 
     df_editable = df[COLUMNAS_TABLA]
 
+    df_original = df.copy()
+
     edited = st.data_editor(
         df_editable,
         hide_index=True,
@@ -376,95 +388,62 @@ with tab2:
         }
     )
 
+    # Si no hay filas, salimos
     if df.empty:
         st.info("No hay registros para mostrar")
         st.stop()
-        
+
+    # Necesitamos row_id para guardar
     edited["row_id"] = df["row_id"]
 
-    # ---------------------------------------
-    # DETECTAR CAMBIOS
-    # ---------------------------------------
-    cambios = edited.merge(df, indicator=True, how="outer")
-    cambios = cambios[cambios["_merge"] != "both"]
+    # Detectar cambios comparando contra el original (solo columnas editables)
+    cols_editables = ["recolectado", "empaque", "checklist", "cierre", "notas"]
 
-    if not cambios.empty:
-        st.warning("⚠ Se detectaron cambios. Guardando...")
+    # Asegurar que existan (por si alguna no vino en el df)
+    for c in cols_editables:
+        if c not in edited.columns:
+            edited[c] = False if c in ["recolectado","empaque","checklist","cierre"] else ""
+        if c not in df_original.columns:
+            df_original[c] = False if c in ["recolectado","empaque","checklist","cierre"] else ""
+
+    hubo_cambios = not edited[cols_editables].equals(df_original[cols_editables])
+
+    if hubo_cambios:
+        st.warning("⚠️ Se detectaron cambios. Guardando...")
 
         try:
             updates = []
 
-            for idx, row in edited.iterrows():
-                original = df[df["row_id"] == row["row_id"]].iloc[0]
+            for i, row in edited.iterrows():
+                original_row = df_original.iloc[i]
 
-                # checkboxes
-                cambios_checkbox = {
-                    "recolectado": row["recolectado"],
-                    "empaque": row["empaque"],
-                    "checklist": row["checklist"],
-                    "cierre": row["cierre"],
-                }
+                # ¿Cambió esta fila?
+                if not row[cols_editables].equals(original_row[cols_editables]):
 
-                # notas
-                cambios_notas = row["notas"]
+                    update_row = smartsheet.models.Row()
+                    update_row.id = int(row["row_id"])
+                    update_row.cells = []
 
-                update_row = smartsheet.models.Row()
-                update_row.id = int(row["row_id"])
-                update_row.cells = []
+                    for col in cols_editables:
+                        cell = smartsheet.models.Cell()
+                        cell.column_id = COL_ID[col]
+                        cell.value = row[col]
+                        update_row.cells.append(cell)
 
-                for col, val in cambios_checkbox.items():
-                    cell = smartsheet.models.Cell()
-                    cell.column_id = COL_ID[col]
-                    cell.value = val
-                    update_row.cells.append(cell)
+                    updates.append(update_row)
 
-                cell = smartsheet.models.Cell()
-                cell.column_id = COL_ID["notas"]
-                cell.value = cambios_notas
-                update_row.cells.append(cell)
+            if updates:
+                client.Sheets.update_rows(SHEET_ID, updates)
 
-                updates.append(update_row)
+                # Refresh inteligente
+                cargar_desde_smartsheet.clear()
+                st.session_state.last_refresh = time.time()
 
-            client.Sheets.update_rows(SHEET_ID, updates)
-            st.success("✔ Cambios guardados correctamente")
-            st.rerun()
+                st.success("✅ Cambios guardados y actualizados")
 
         except Exception as e:
-            st.error("❌ Error al guardar los cambios")
+            st.error("❌ Error al guardar cambios")
             st.write(e)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
