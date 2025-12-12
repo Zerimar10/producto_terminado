@@ -165,9 +165,6 @@ st.markdown("""
 
 tab1, tab2 = st.tabs(["➕ Registrar Orden", "📦 Almacén"])
 
-***NOTICE*** This came from an external source. Use caution when replying, clicking on links, or opening attachments.
-
-
 # ===========================
 # TAB 1 – Registrar Producto
 # ===========================
@@ -434,6 +431,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
