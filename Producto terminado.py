@@ -293,7 +293,7 @@ with tab2:
 
     for col in ["recolectado", "empaque", "checklist", "cierre"]:
         if col in df.columns:
-            df[col] = df[col].astypse(bool).astype(int)
+            df[col] = df[col].astype(bool).astype(int)
 
     # ---------------------------------------
     # INDICADORES RÁPIDOS
@@ -420,6 +420,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
