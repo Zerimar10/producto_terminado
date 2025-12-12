@@ -400,9 +400,9 @@ with tab2:
                     # Normalizar texto
                     for col in COLS_TEXTO:
                         if pd.isna(row[col]):
-                        row[col] = ""
-                    else:
-                        row[col] = str(row[col])
+                            row[col] = ""
+                        else:
+                            row[col] = str(row[col])
 
                     update_row = smartsheet.models.Row()
                     update_row.id = int(row["row_id"])
@@ -441,6 +441,7 @@ with tab2:
     if time.time() - st.session_state.last_refresh > 30:
         st.session_state.last_refresh = time.time()
         st.rerun()
+
 
 
 
