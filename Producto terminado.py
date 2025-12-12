@@ -322,6 +322,27 @@ with tab2:
     # Asegurar tipos booleanos correctos
     for col in ["recolectado", "empaque", "checklist", "cierre"]:
         df[col] = df[col].apply(lambda x: True if x is True else False)
+
+    # ---------------------------------------
+    # INDICADORES RÁPIDOS
+    # ---------------------------------------
+    st.markdown("### 📊 Indicadores rápidos")
+
+    total = len(df)
+    recolectados = df["recolectado"].sum()
+    empaques = df["empaque"].sum()
+    checklists = df["checklist"].sum()
+    cerrados = df["cierre"].sum()
+    pendientes = total - cerrados
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+    c1.metric("Total", total)
+    c2.metric("Recolectado", int(recolectados))
+    c3.metric("Empaque", int(empaques))
+    c4.metric("Checklist", int(checklists))
+    c5.metric("Cerrado", int(cerrados))
+    c6.metric("Pendiente", int(pendientes))
         
     # ---------------------------------------
     # COLUMNA VISUAL DE COLOR VERDE
@@ -409,6 +430,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
