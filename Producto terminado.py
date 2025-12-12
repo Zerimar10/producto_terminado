@@ -3,7 +3,7 @@ import smartsheet
 from datetime import datetime, timedelta
 import pandas as pd
 
-st.set_page_config(page_title="Registro de Producto Terminado")
+st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
 
 ALMACEN_PASSWORD = st.secrets["ALMACEN_PASSWORD"]
 
@@ -171,6 +171,15 @@ tab1, tab2 = st.tabs(["➕ Registrar Orden", "📦 Almacén"])
 
 with tab1:
 
+    # contenedor centrado para que Tab1 no se vea tan ancho
+    col_izq, col_centro, col_der = st.columns([1, 2, 1])
+
+    with col_centro:
+        st.header("Registrar Producto Terminado")
+
+        # aquí va TODO lo que ya tenías del formulario:
+        # selects, text_input, number_input, botón, etc.
+
     st.header("Registrar Producto Terminado")
 
     # Inicializar session_state
@@ -272,30 +281,6 @@ with tab1:
 # ============================================================
 
 with tab2:
-
-    st.markdown("""
-    <style>
-
-        /* Fuerza ancho completo SOLO dentro del contenido del Tab 2 */
-
-        /* Ajusta el bloque que contiene la tabla dentro del Tab */
-        div[data-testid="stHorizontalBlock"] div[data-testid="stDataEditor"] {
-            width: 100% !important;
-        }
-
-        /* Ajusta el viewport interno del editor */
-        div[data-testid="stHorizontalBlock"] div[data-testid="stDataEditor-Viewport"] {
-            width: 100% !important;
-            overflow-x: auto !important;
-        }
-
-        /* Ajusta los bloques internos */
-        div[data-testid="stHorizontalBlock"] div[data-testid="stVerticalBlock"] {
-            width: 100% !important;
-        }
-
-    </style>
-    """, unsafe_allow_html=True)
 
     st.markdown("## 📦 Panel de Almacén – Producto Terminado")
 
@@ -429,6 +414,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
