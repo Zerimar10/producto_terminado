@@ -36,23 +36,6 @@ def cargar_sheet_y_col_ids():
 sheet, COL_ID = cargar_sheet_y_col_ids()
 
 # ============================================================
-# CONSTANTES SMARTSHEET
-# ============================================================
-
-COL_ID = {
-    "cuarto": 4253122231488388,
-    "numero_parte": 8756721858858884,
-    "numero_orden": 171735069183876,
-    "cantidad": 4675334696554372,
-    "fecha_hora": 5596968911589252,
-    "recolectado": 3345169097904004,
-    "empaque": 7848768725274500,
-    "checklist": 2219269191061380,
-    "cierre": 6722868818431876,
-    "notas": 4471069004746628,
-}
-
-# ============================================================
 # FUNCIÓN → CARGAR DATOS DESDE SMARTSHEET
 # ============================================================
 
@@ -314,16 +297,13 @@ with tab2:
                 if cell.column_id == v:
                     data[k] = cell.value
                 
-            # ✅ filtrar filas realmente vacías (deja pasar si hay orden o parte)
-            if str(data.get("numero_orden", "")).strip() == "" and str(data.get("numero_parte", "")).strip() == "":
-                continue
+        # ✅ filtrar filas realmente vacías (deja pasar si hay orden o parte)
+        if (str(data.get("numero_orden", "")).strip() == "" and str(data.get("numero_parte", "")).strip() == ""):
+            continue
 
-            rows.append(data)
+        rows.append(data)
 
-        df = pd.DataFrame(rows).fillna("")
-
-    st.write("Filas reales detectadas:", len(df))
-    st.write(df)
+    df = pd.DataFrame(rows).fillna("")
 
     # Asegurar tipos booleanos correctos
     for col in ["recolectado", "empaque", "checklist", "cierre"]:
@@ -396,6 +376,10 @@ with tab2:
         }
     )
 
+    if df.empty:
+        st.info("No hay registros para mostrar")
+        st.stop()
+        
     edited["row_id"] = df["row_id"]
 
     # ---------------------------------------
@@ -448,6 +432,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
