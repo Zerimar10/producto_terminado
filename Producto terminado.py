@@ -390,21 +390,35 @@ with tab2:
                     COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
                     COLS_TEXTO = ["notas"]
 
+                    # Normalizar valores antes de enviar a Smartsheet
+                    for col in COLS_CHECKBOX:
+                        if pd.isna(row[col]):
+                            row[col] = False
+                        else:
+                            row[col] = bool(row[col])
+
+                    # Normalizar texto
+                    for col in COLS_TEXTO:
+                        if pd.isna(row[col]):
+                        row[col] = ""
+                    else:
+                        row[col] = str(row[col])
+
                     update_row = smartsheet.models.Row()
                     update_row.id = int(row["row_id"])
                     update_row.cells = []
 
-                    # Checkboxes (bool)
-                    for col in COLS_CHECKBOX:
+                    # Checkboxes
+                    for col in ["recolectado", "empaque", "checklist", "cierre"]:
                         cell = smartsheet.models.Cell()
                         cell.column_id = COL_ID[col]
                         cell.value = bool(row[col])
                         update_row.cells.append(cell)
 
-                    # Notas (texto)
+                    # Notas
                     cell = smartsheet.models.Cell()
                     cell.column_id = COL_ID["notas"]
-                    cell.value = str(row["notas"]) if row["notas"] else ""
+                    cell.value = row["notas"]
                     update_row.cells.append(cell)
 
                     updates.append(update_row)
@@ -427,6 +441,7 @@ with tab2:
     if time.time() - st.session_state.last_refresh > 30:
         st.session_state.last_refresh = time.time()
         st.rerun()
+
 
 
 
