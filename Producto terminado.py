@@ -292,37 +292,6 @@ with tab2:
     st.success("🔓 Acceso concedido")
 
     # ---------------------------------------
-    # CARGAR DATOS DE SMARTSHEET
-    # ---------------------------------------
-    client = smartsheet.Smartsheet(st.secrets["SMARTSHEET_TOKEN"])
-    sheet = client.Sheets.get_sheet(SHEET_ID)
-
-    rows = []
-    for r in sheet.rows:
-        data = {"row_id": r.id}
-
-        # llenar por columna
-        for cell in r.cells:
-            for k, v in COL_ID.items():
-                if cell.column_id == v:
-                    data[k] = cell.value
-                
-        # ✅ filtrar filas realmente vacías (deja pasar si hay orden o parte)
-        if (str(data.get("numero_orden", "")).strip() == "" and str(data.get("numero_parte", "")).strip() == ""):
-            continue
-
-        rows.append(data)
-
-    df = pd.DataFrame(rows).fillna("")
-
-    # Asegurar tipos booleanos correctos
-    for col in ["recolectado", "empaque", "checklist", "cierre"]:
-        if col not in df.columns:
-            df[col] = False
-        else:
-            df[col] = df[col].apply(lambda x: True if x is True else False)
-
-    # ---------------------------------------
     # INDICADORES RÁPIDOS
     # ---------------------------------------
     st.markdown("### 📊 Indicadores rápidos")
@@ -379,6 +348,7 @@ with tab2:
         df_editable,
         hide_index=True,
         use_container_width=True,
+        key="editor_almacen",
         column_config={
             "recolectado": st.column_config.CheckboxColumn("Recolectado"),
             "empaque": st.column_config.CheckboxColumn("Empaque"),
@@ -441,9 +411,12 @@ with tab2:
 
                 st.success("✅ Cambios guardados y actualizados")
 
+                st.rerun()
+
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
