@@ -177,6 +177,9 @@ with tab1:
         # aquí va TODO lo que ya tenías del formulario:
         # selects, text_input, number_input, botón, etc.
 
+    # contenedor centrado para que Tab1 no se vea tan ancho
+    col_izq, col_centro, col_der = st.columns([1, 2, 1])
+
     st.header("Registrar Producto Terminado")
 
     # Inicializar session_state
@@ -411,6 +414,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
