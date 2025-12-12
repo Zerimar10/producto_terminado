@@ -347,10 +347,19 @@ with tab2:
     # ---------------------------------------
     st.markdown("### ✏️ Editar registros")
 
-    df_editable = df[[
+    COLUMNAS_TABLA = [
         "cuarto", "numero_parte", "numero_orden", "cantidad", "fecha_hora",
         "recolectado", "empaque", "checklist", "cierre", "notas"
-    ]]
+    ]
+
+    for col in COLUMNAS_TABLA:
+        if col not in df.columns:
+            if col in ["recolectado", "empaque", "checklist", "cierre"]:
+                df[col] = False
+            else:
+                df[col] = ""
+
+    df_editable = df[COLUMNAS_TABLA]
 
     edited = st.data_editor(
         df_editable,
@@ -417,6 +426,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
