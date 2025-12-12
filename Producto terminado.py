@@ -28,7 +28,6 @@ client.errors_as_exceptions(True)
 # ============================================================
 # CONSTANTES SMARTSHEET
 # ============================================================
-SHEET_ID = 3463316224561028
 
 COL_ID = {
     "cuarto": 4253122231488388,
@@ -238,23 +237,23 @@ with tab1:
 
             else:
                 try:
-                    new_row = smartsheet.models.Row()
-                    new_row.to_bottom = True
+                    # Fecha con ajuste horario
+                    fecha_hora = datetime.now() - timedelta(hours=7)
 
-                    new_row.cells.extend([
+                    # Crear fila
+                    new_row = smartsheet.models.Row()
+                    new_row.to_top = True # 👈 se agrega al INICIO
+
+                    new_row.cells = [
                         {"column_id": COL_ID["cuarto"], "value": cuarto},
                         {"column_id": COL_ID["numero_parte"], "value": numero_parte},
                         {"column_id": COL_ID["numero_orden"], "value": numero_orden},
                         {"column_id": COL_ID["cantidad"], "value": cantidad},
                         {
                             "column_id": COL_ID["fecha_hora"],
-                            "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            "value": fecha_hora.strftime("%Y-%m-%d %H:%M:%S")
                         }
-                    ])
-
-                    new_row = smartsheet.models.Row()
-                    new_row.to_top = True
-                    new_row.cells = cells
+                    ]
 
                     client.Sheets.add_rows(SHEET_ID, [new_row])
 
@@ -263,7 +262,7 @@ with tab1:
                 except Exception as e:
                     st.error("❌ Error al guardar en Smartsheet")
                     st.write(e)
-    
+
 # ============================================================
 # TAB 2 — PANEL DE ALMACÉN
 # ============================================================
@@ -423,6 +422,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
