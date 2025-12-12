@@ -306,7 +306,8 @@ with tab2:
 
     df = pd.DataFrame(rows).fillna("")
 
-    st.write("Filas cargadas desde Smartsheet:", len(df))
+    st.write("Filas reales detectadas:", len(df))
+    st.write(df)
 
     # Asegurar tipos booleanos correctos
     for col in ["recolectado", "empaque", "checklist", "cierre"]:
@@ -431,6 +432,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
