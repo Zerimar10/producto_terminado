@@ -305,7 +305,10 @@ with tab2:
 
     # Asegurar tipos booleanos correctos
     for col in ["recolectado", "empaque", "checklist", "cierre"]:
-        df[col] = df[col].apply(lambda x: True if x is True else False)
+        if col not in df.columns:
+            df[col] = False
+        else:
+            df[col] = df[col].apply(lambda x: True if x is True else False)
 
     # ---------------------------------------
     # INDICADORES RÁPIDOS
@@ -414,6 +417,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
