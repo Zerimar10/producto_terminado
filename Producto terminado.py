@@ -256,15 +256,7 @@ with tab1:
 
 with tab2:
 
-    if "last_refresh" not in st.session_state:
-        st.session_state.last_refresh = time.time()
-
-    now = time.time()
-
-    #Forzar refresh cada 30 segundos
-    if now - st.session_state.last_refresh > 30:
-        cargar_desde_smartsheet.clear() # limpia cache
-        st.session_state.last_refresh = now
+    st.autorefresh(interval=30_000, key="auto_refresh_almacen")
 
     df = cargar_desde_smartsheet()
 
@@ -420,6 +412,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
