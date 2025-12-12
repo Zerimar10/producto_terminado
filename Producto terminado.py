@@ -1,11 +1,21 @@
 import streamlit as st
 import smartsheet
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 
 st.set_page_config(page_title="Registro de Producto Terminado", layout="wide")
 
 ALMACEN_PASSWORD = st.secrets["ALMACEN_PASSWORD"]
+
+# ============================================================
+# SMARTSHEET CLIENT (GLOBAL)
+# ============================================================
+
+SMARTSHEET_TOKEN = st.secrets["SMARTSHEET_TOKEN"]
+SHEET_ID = SHEET_ID # ya lo tienes definido
+
+client = smartsheet.Smartsheet(SMARTSHEET_TOKEN)
+client.errors_as_exceptions(True)
 
 # ============================================================
 # CONSTANTES SMARTSHEET
@@ -401,6 +411,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar los cambios")
             st.write(e)
+
 
 
 
