@@ -394,16 +394,16 @@ with tab2:
 
                     # CHECKBOXES (bool REAL)
                     for col in COLS_CHECKBOX:
-                        if pd.isna(row[col]):
-                            row[col] = False
-                        else:
-                            row[col] = bool(row[col])
+                        cell = smartsheet.models.Cell()
+                        cell.columns_id = COL_ID[col]
+                        cell.value = bool(row[col])
+                        update_row.cells.append(cell)
 
                     #NOTAS SIEMPRE STRING
-                    if pd.isna(row["notas"]):
-                        row["notas"] = ""
-                    else:
-                        row["notas"] = str(row["notas"])
+                    cell = smartsheet.models.Cell()
+                    cell.column_id = COL_ID["notas"]
+                    cell.value = str(row["notas"]) if row ["notas"] else ""
+                    update_row.cells.append(cell)
 
                     updates.append(update_row)
 
@@ -414,11 +414,13 @@ with tab2:
                 st.session_state.last_refresh = time.time()
 
                 st.success("✅ Cambios guardados y actualizados")
+
                 st.rerun()
 
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
