@@ -384,40 +384,23 @@ with tab2:
             for i, row in edited.iterrows():
                 original_row = df_original.iloc[i]
 
-                # ¿Cambió esta fila?
                 if not row[cols_editables].equals(original_row[cols_editables]):
-
-                    COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
-                    COLS_TEXTO = ["notas"]
-
-                    # Normalizar valores antes de enviar a Smartsheet
-                    for col in COLS_CHECKBOX:
-                        if pd.isna(row[col]):
-                            row[col] = False
-                        else:
-                            row[col] = bool(row[col])
-
-                    # Notas SIEMPRE string
-                    if pd.isna(row["notas"]):
-                        row["notas"] = ""
-                    else:
-                        row["notas"] = str(row["notas"])
 
                     update_row = smartsheet.models.Row()
                     update_row.id = int(row["row_id"])
                     update_row.cells = []
 
-                    # Checkboxes
+                    # CHECKBOXES (bool REAL)
                     for col in ["recolectado", "empaque", "checklist", "cierre"]:
                         cell = smartsheet.models.Cell()
                         cell.column_id = COL_ID[col]
                         cell.value = bool(row[col])
                         update_row.cells.append(cell)
 
-                    # Notas
+                    # NOTAS (string SIEMPRE)
                     cell = smartsheet.models.Cell()
                     cell.column_id = COL_ID["notas"]
-                    cell.value = row["notas"]
+                    cell.value = "" if pd.isna(row["notas"]) else str(row["notas"])
                     update_row.cells.append(cell)
 
                     updates.append(update_row)
@@ -425,21 +408,16 @@ with tab2:
             if updates:
                 client.Sheets.update_rows(SHEET_ID, updates)
 
-                # Refresh inteligente
                 cargar_desde_smartsheet.clear()
                 st.session_state.last_refresh = time.time()
 
                 st.success("✅ Cambios guardados y actualizados")
-
                 st.rerun()
 
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
 
-    if time.time() - st.session_state.last_refresh > 30:
-        st.session_state.last_refresh = time.time()
-        st.rerun()
 
 
 
