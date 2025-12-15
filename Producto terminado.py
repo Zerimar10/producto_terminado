@@ -392,6 +392,8 @@ with tab2:
                     update_row.id = int(row["row_id"])
                     update_row.cells = []
 
+                    tiene_cambios = False
+
                     # CHECKBOXES (bool REAL)
                     for col in COLS_CHECKBOX:
                         if row[col] != original_row[col]:
@@ -399,7 +401,7 @@ with tab2:
                             cell.column_id = COL_ID[col]
                             cell.value = bool(row[col])
                             update_row.cells.append(cell)
-                            tiene_cambios = False
+                            tiene_cambios = True
 
                     #NOTAS SIEMPRE STRING
                     if row["notas"] != original_row["notas"]:
@@ -425,6 +427,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
