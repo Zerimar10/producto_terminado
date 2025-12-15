@@ -396,7 +396,7 @@ with tab2:
                     for col in COLS_CHECKBOX:
                         if row[col] != original_row[col]:
                             cell = smartsheet.models.Cell()
-                            cell.column_id = COL_ID[col[
+                            cell.column_id = COL_ID[col]
                             cell.value = bool(row[col])
                             update_row.cells.append(cell)
                             tiene_cambios = False
@@ -425,6 +425,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
