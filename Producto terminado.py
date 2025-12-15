@@ -394,18 +394,23 @@ with tab2:
 
                     # CHECKBOXES (bool REAL)
                     for col in COLS_CHECKBOX:
-                        cell = smartsheet.models.Cell()
-                        cell.columns_id = COL_ID[col]
-                        cell.value = bool(row[col])
-                        update_row.cells.append(cell)
+                        if row[col] != original_row[col]:
+                            cell = smartsheet.models.Cell()
+                            cell.column_id = COL_ID[col[
+                            cell.value = bool(row[col])
+                            update_row.cells.append(cell)
+                            tiene_cambios = False
 
                     #NOTAS SIEMPRE STRING
-                    cell = smartsheet.models.Cell()
-                    cell.column_id = COL_ID["notas"]
-                    cell.value = str(row["notas"]) if row ["notas"] else ""
-                    update_row.cells.append(cell)
+                    if row["notas"] != original_row["notas"]:
+                        cell = smartsheet.models.Cell()
+                        cell.column_id = COL_ID["notas"]
+                        cell.value = str(row["notas"]) if row["notas"] else ""
+                        update_row.cells.append(cell)
+                        tiene_cambios = True
 
-                    updates.append(update_row)
+                    if tiene_cambios:
+                        updates.append(update_row)
 
             if updates:
                 client.Sheets.update_rows(SHEET_ID, updates)
@@ -420,6 +425,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
