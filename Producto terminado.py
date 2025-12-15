@@ -364,7 +364,9 @@ with tab2:
     edited["row_id"] = df["row_id"]
 
     # Detectar cambios comparando contra el original (solo columnas editables)
-    cols_editables = ["recolectado", "empaque", "checklist", "cierre", "notas"]
+    COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
+    COLS_TEXTO = ["notas"]
+    cols_editables = COLS_CHECKBOX + COLS_TEXTO
 
     # Asegurar que existan (por si alguna no vino en el df)
     for c in cols_editables:
@@ -391,7 +393,7 @@ with tab2:
                     update_row.cells = []
 
                     # CHECKBOXES (bool REAL)
-                    for col in ["recolectado", "empaque", "checklist", "cierre"]:
+                    for col in COLS_CHECKBOX:
                         cell = smartsheet.models.Cell()
                         cell.column_id = COL_ID[col]
                         cell.value = bool(row[col])
@@ -417,6 +419,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
