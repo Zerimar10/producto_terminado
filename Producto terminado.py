@@ -258,15 +258,23 @@ COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
 COLS_TEXTO = ["notas"]
 cols_editables = COLS_CHECKBOX + COLS_TEXTO
 
+if "last_auto_refresh" not in st.session_state:
+        st.session_state.last_auto_refresh = time.time()
+
+now = time.time()
+
 with tab2:
 
-    if "last_refresh" not in st.session_state:
-        st.session_state.last_refresh = time.time()
+    if now - st.session_state.last_auto_refresh > 30:
+        st.session_state.last_auto_refresh = now
+        cargar_desde_smartsheet.clear()
+        st.rerun()
 
     df = cargar_desde_smartsheet()
 
     st.caption(
-        f"🔄 Última actualización automática: {time.strftime('%H:%M:%S', time.localtime(st.session_state.last_refresh))}"
+        f"🔄 Última actualización automática: "
+        f"{time.strftime('%H:%M:%S', time.localtime(st.session_state.last_auto_refresh))}"
     )
 
     st.markdown("## 📦 Producto Terminado")
@@ -427,6 +435,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
