@@ -397,12 +397,11 @@ with tab2:
                         else:
                             row[col] = bool(row[col])
 
-                    # Normalizar texto
-                    for col in COLS_TEXTO:
-                        if pd.isna(row[col]):
-                            row[col] = ""
-                        else:
-                            row[col] = str(row[col])
+                    # Notas SIEMPRE string
+                    if pd.isna(row["notas"]):
+                        row["notas"] = ""
+                    else:
+                        row["notas"] = str(row["notas"])
 
                     update_row = smartsheet.models.Row()
                     update_row.id = int(row["row_id"])
@@ -441,6 +440,7 @@ with tab2:
     if time.time() - st.session_state.last_refresh > 30:
         st.session_state.last_refresh = time.time()
         st.rerun()
+
 
 
 
