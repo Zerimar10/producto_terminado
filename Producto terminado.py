@@ -253,6 +253,10 @@ with tab1:
 # ============================================================
 # TAB 2 — PANEL DE ALMACÉN
 # ============================================================
+# Detectar cambios comparando contra el original (solo columnas editables)
+COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
+COLS_TEXTO = ["notas"]
+cols_editables = COLS_CHECKBOX + COLS_TEXTO
 
 with tab2:
 
@@ -363,11 +367,6 @@ with tab2:
     # Necesitamos row_id para guardar
     edited["row_id"] = df["row_id"]
 
-    # Detectar cambios comparando contra el original (solo columnas editables)
-    COLS_CHECKBOX = ["recolectado", "empaque", "checklist", "cierre"]
-    COLS_TEXTO = ["notas"]
-    cols_editables = COLS_CHECKBOX + COLS_TEXTO
-
     # Asegurar que existan (por si alguna no vino en el df)
     for c in cols_editables:
         if c not in edited.columns:
@@ -383,7 +382,8 @@ with tab2:
         try:
             updates = []
 
-            for i, row in edited.iterrows():
+            for i in range (len(edited)):
+                row = edited.iloc[i]
                 original_row = df_original.iloc[i]
 
                 if not row[cols_editables].equals(original_row[cols_editables]):
@@ -394,16 +394,16 @@ with tab2:
 
                     # CHECKBOXES (bool REAL)
                     for col in COLS_CHECKBOX:
-                        cell = smartsheet.models.Cell()
-                        cell.column_id = COL_ID[col]
-                        cell.value = bool(row[col])
-                        update_row.cells.append(cell)
+                        if pd.isna(row[col]):
+                            row[col] = False
+                        else:
+                            row[col] = bool(row[col])
 
-                    # NOTAS (string SIEMPRE)
-                    cell = smartsheet.models.Cell()
-                    cell.column_id = COL_ID["notas"]
-                    cell.value = "" if pd.isna(row["notas"]) else str(row["notas"])
-                    update_row.cells.append(cell)
+                    #NOTAS SIEMPRE STRING
+                    if pd.isna(row["notas"]):
+                        row["notas"] = ""
+                    else:
+                        row["notas"] = str(row["notas"])
 
                     updates.append(update_row)
 
@@ -419,6 +419,7 @@ with tab2:
         except Exception as e:
             st.error("❌ Error al guardar cambios")
             st.write(e)
+
 
 
 
